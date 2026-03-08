@@ -407,8 +407,7 @@ padding-left: 2px;
 
 .task-item {
 display: flex;
-align-items: center;
-gap: 10px;
+flex-direction: column;
 background: var(--surface);
 border: 1px solid var(--border);
 border-left: 3px solid transparent;
@@ -419,6 +418,12 @@ transition: border-color 0.2s, background 0.2s, opacity 0.3s, transform 0.2s;
 user-select: none;
 position: relative;
 animation: slideIn 0.22s ease;
+}
+.task-item-row {
+display: flex;
+align-items: center;
+gap: 10px;
+width: 100%;
 }
 @keyframes slideIn {
 from { opacity: 0; transform: translateY(-6px); }
@@ -1108,6 +1113,7 @@ function render() {
       ? '<span style="font-size:0.6rem;color:var(--text-muted);letter-spacing:0.06em;text-transform:uppercase;">' + (state.lists.find(l=>l.id===task.list)||{}).name + '</span>' : '';
 
     li.innerHTML =
+      '<div class="task-item-row">' +
       '<span class="drag-handle" title="Drag">&#10783;</span>' +
       '<div class="checkbox" onclick="toggleDone(\'' + task.id + '\')">' + (task.done ? '&#10003;' : '') + '</div>' +
       '<div class="task-main">' +
@@ -1136,12 +1142,13 @@ function render() {
         '<button class="action-btn highlight-btn" title="Highlight" onclick="toggleHighlight(\'' + task.id + '\')">&#9733;</button>' +
         '<button class="action-btn edit-task-btn" title="Edit task" onclick="openEditTaskModal(\'' + task.id + '\')">&#9998;</button>' +
         '<button class="action-btn delete-btn" title="Delete" onclick="deleteTask(\'' + task.id + '\')">&#x2715;</button>' +
+      '</div>' +
       '</div>';
 
     // inject comment section
     const commentWrap = document.createElement('div');
     commentWrap.className = 'task-comment-wrap';
-    commentWrap.style.cssText = 'padding: 0 10px 0 36px;';
+    commentWrap.style.cssText = 'padding: 6px 4px 0 4px;';
     const isExpanded = expandedComments.has(task.id);
     const comments = task.comments || [];
     if (isExpanded || comments.length > 0) {
@@ -1485,7 +1492,7 @@ function buildCommentSection(task, isExpanded) {
     });
     out += '<div class="comment-input-row">'
       + '<textarea class="comment-input" id="ci-' + tid + '" placeholder="Add a comment&#8230;" rows="1"'
-      + ' onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();submitComment(&#39;' + tid + '&#39;);}"></textarea>'
+      + ' onkeydown="if(event.key===\'Enter\'&&(event.ctrlKey||event.metaKey)){event.preventDefault();submitComment(&#39;' + tid + '&#39;);}"></textarea>'
       + '<button class="comment-add-btn" onclick="submitComment(&#39;' + tid + '&#39;)">+ Add</button>'
       + '</div></div>';
   }
@@ -1503,7 +1510,7 @@ function toggleComments(id) {
   if (!wrap) {
     wrap = document.createElement('div');
     wrap.className = 'task-comment-wrap';
-    wrap.style.cssText = 'padding: 0 10px 0 36px;';
+    wrap.style.cssText = 'padding: 6px 4px 0 4px;';
     li.appendChild(wrap);
   }
   wrap.innerHTML = buildCommentSection(task, expandedComments.has(id));
