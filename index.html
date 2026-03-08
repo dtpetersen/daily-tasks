@@ -173,6 +173,20 @@ letter-spacing: 0.05em;
 transition: all 0.18s;
 }
 .add-list-btn:hover { border-color: var(--accent); color: var(--accent); }
+.list-tab .tab-delete {
+background: none; border: none; cursor: pointer;
+color: transparent; font-size: 0.6rem; padding: 0 0 0 4px;
+line-height: 1; transition: color 0.15s; margin-left: 2px;
+}
+.list-tab:hover .tab-delete { color: rgba(0,0,0,0.35); }
+.list-tab.active .tab-delete { color: rgba(0,0,0,0.3); }
+.list-tab:hover .tab-delete:hover { color: rgba(0,0,0,0.7); }
+.list-tab input.tab-rename {
+background: none; border: none; border-bottom: 1px solid currentColor;
+color: inherit; font-family: inherit; font-size: inherit;
+font-weight: inherit; letter-spacing: inherit; text-transform: inherit;
+outline: none; width: 80px; padding: 0;
+}
 
 /* -- STATS -- */
 .stats-row {
@@ -878,7 +892,7 @@ color: var(--text);
 <div class="modal-overlay" id="list-modal">
   <div class="modal">
     <h3>New List</h3>
-    <input type="text" id="list-name-input" placeholder="e.g. Work, Personal, Errands&#8230;" maxlength="30" />
+    <input type="text" id="list-name-input" placeholder="e.g. New Business, Renewals&#8230;" maxlength="30" />
     <div class="modal-actions">
       <button class="btn-ghost" onclick="closeModal()">Cancel</button>
       <button class="btn" onclick="confirmNewList()">Create</button>
@@ -916,6 +930,28 @@ color: var(--text);
     <div class="modal-actions">
       <button class="btn-ghost" onclick="closeEditTaskModal()">Cancel</button>
       <button class="btn" onclick="confirmEditTask()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE LIST MODAL -->
+<div class="modal-overlay" id="delete-list-modal">
+  <div class="modal" style="width:min(440px,94vw);">
+    <h3>Delete List</h3>
+    <div id="delete-list-warning" style="font-size:0.78rem;color:var(--text-muted);line-height:1.6;"></div>
+    <div id="delete-list-move-wrap" style="display:none;flex-direction:column;gap:8px;">
+      <div class="modal-field-label">Move tasks to</div>
+      <select id="delete-list-move-select" style="width:100%;background-color:var(--input-bg);border:1px solid var(--input-border);color:var(--text);font-family:'DM Mono',monospace;font-size:0.82rem;padding:9px 12px;border-radius:4px;outline:none;-webkit-appearance:none;appearance:none;background-image:var(--select-arrow);background-repeat:no-repeat;background-position:right 12px center;padding-right:30px;"></select>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;margin-top:4px;">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.75rem;color:var(--text-muted);">
+        <input type="checkbox" id="delete-list-move-chk" onchange="toggleDeleteListMove()" style="-webkit-appearance:auto;appearance:auto;accent-color:var(--accent);width:14px;height:14px;" />
+        Move tasks to another list instead of deleting them
+      </label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeDeleteListModal()">Cancel</button>
+      <button class="btn" id="delete-list-confirm-btn" style="background:var(--red);color:#fff;" onclick="confirmDeleteList()">Delete List</button>
     </div>
   </div>
 </div>
@@ -1051,8 +1087,55 @@ function renderListsBar() {
 
     const btn = document.createElement('button');
     btn.className = 'list-tab' + (state.activeList === list.id ? ' active' : '');
-    btn.innerHTML = list.name + ' <span class="tab-count">' + count + '</span>';
-    btn.onclick = () => { state.activeList = list.id; save(); render(); };
+
+    if (list.id === 'all') {
+      btn.innerHTML = list.name + ' <span class="tab-count">' + count + '</span>';
+    } else {
+      btn.innerHTML =
+        '<span class="tab-name">' + list.name + '</span>' +
+        ' <span class="tab-count">' + count + '</span>' +
+        '<span class="tab-delete" title="Delete list" onclick="event.stopPropagation();openDeleteListModal(\'' + list.id + '\')">&#x2715;</span>';
+
+      // double-click to rename
+      btn.addEventListener('dblclick', function(e) {
+        e.stopPropagation();
+        const nameSpan = btn.querySelector('.tab-name');
+        const currentName = nameSpan.textContent;
+        const input = document.createElement('input');
+        input.className = 'tab-rename';
+        input.value = currentName;
+        input.style.width = Math.max(60, currentName.length * 9) + 'px';
+        nameSpan.replaceWith(input);
+        input.focus();
+        input.select();
+        function finishRename() {
+          const newName = input.value.trim();
+          if (newName && newName !== currentName) {
+            const l = state.lists.find(l => l.id === list.id);
+            if (l) { l.name = newName; save(); }
+          }
+          render();
+        }
+        input.addEventListener('blur', finishRename);
+        input.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+          if (e.key === 'Escape') { input.value = currentName; input.blur(); }
+        });
+      });
+    }
+
+    var clickTimer = null;
+    btn.addEventListener('click', function(e) {
+      if (e.target.classList.contains('tab-delete') || e.target.classList.contains('tab-rename')) return;
+      if (list.id === 'all') { state.activeList = list.id; save(); render(); return; }
+      clearTimeout(clickTimer);
+      clickTimer = setTimeout(function() {
+        state.activeList = list.id; save(); render();
+      }, 220);
+    });
+    btn.addEventListener('dblclick', function(e) {
+      clearTimeout(clickTimer);
+    });
     bar.insertBefore(btn, addBtn);
   });
 }
@@ -1745,6 +1828,72 @@ function hideIOModal(id) {
   const el = document.getElementById(id);
   el.style.opacity = '0'; el.style.pointerEvents = 'none';
   setTimeout(() => { if (el.style.opacity === '0') el.style.display = 'none'; }, 200);
+}
+
+
+// -- DELETE LIST ---------------------------------------
+var deletingListId = null;
+
+function openDeleteListModal(id) {
+  var list = state.lists.find(function(l) { return l.id === id; });
+  if (!list) return;
+  deletingListId = id;
+
+  var taskCount = state.tasks.filter(function(t) { return t.list === id; }).length;
+  var warning = document.getElementById('delete-list-warning');
+  warning.innerHTML = 'You are about to delete <strong style="color:var(--accent);">' + list.name + '</strong>.' +
+    (taskCount > 0
+      ? ' This list has <strong style="color:var(--accent);">' + taskCount + '</strong> task' + (taskCount !== 1 ? 's' : '') + ' that will also be permanently deleted.'
+      : ' This list has no tasks.');
+
+  var moveSelect = document.getElementById('delete-list-move-select');
+  moveSelect.innerHTML = state.lists
+    .filter(function(l) { return l.id !== 'all' && l.id !== id; })
+    .map(function(l) { return '<option value="' + l.id + '">' + l.name + '</option>'; })
+    .join('');
+
+  var hasMoveTargets = state.lists.filter(function(l) { return l.id !== 'all' && l.id !== id; }).length > 0;
+  var chk = document.getElementById('delete-list-move-chk');
+  chk.checked = false;
+  document.getElementById('delete-list-move-wrap').style.display = 'none';
+  document.getElementById('delete-list-confirm-btn').textContent = 'Delete List';
+
+  var chkRow = chk.closest('div');
+  chkRow.style.display = (taskCount > 0 && hasMoveTargets) ? '' : 'none';
+
+  document.getElementById('delete-list-modal').classList.add('show');
+}
+
+function toggleDeleteListMove() {
+  var chk = document.getElementById('delete-list-move-chk');
+  var wrap = document.getElementById('delete-list-move-wrap');
+  var confirmBtn = document.getElementById('delete-list-confirm-btn');
+  wrap.style.display = chk.checked ? 'flex' : 'none';
+  confirmBtn.textContent = chk.checked ? 'Move & Delete List' : 'Delete List';
+}
+
+function closeDeleteListModal() {
+  document.getElementById('delete-list-modal').classList.remove('show');
+  deletingListId = null;
+}
+
+function confirmDeleteList() {
+  if (!deletingListId) return;
+  var chk = document.getElementById('delete-list-move-chk');
+
+  if (chk.checked) {
+    var targetId = document.getElementById('delete-list-move-select').value;
+    state.tasks.forEach(function(t) { if (t.list === deletingListId) t.list = targetId; });
+  } else {
+    state.tasks = state.tasks.filter(function(t) { return t.list !== deletingListId; });
+  }
+
+  state.lists = state.lists.filter(function(l) { return l.id !== deletingListId; });
+  if (state.activeList === deletingListId) state.activeList = 'all';
+  save();
+  closeDeleteListModal();
+  render();
+  showToast(chk.checked ? 'List deleted, tasks moved' : 'List and tasks deleted');
 }
 
 // -- PWA INSTALL PROMPT --------------------------------
