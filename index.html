@@ -793,9 +793,9 @@ color: var(--text);
     <div class="timer-collapsed">
       <div class="timer-mini-clock" id="timer-mini-clock">00:30</div>
       <span class="timer-mini-label" id="timer-mini-label">Countdown Timer</span>
-      <button class="timer-mini-play" id="timer-mini-play" onclick="timerTogglePlay()">&#9654; Start</button>
-      <button class="t-btn adj" onclick="timerReset()" title="Reset" style="padding:5px 9px;">&#8635;</button>
-      <button class="timer-collapse-btn" onclick="timerToggleExpand()" id="timer-collapse-btn">&#9656; expand</button>
+      <button class="timer-mini-play" id="timer-mini-play" onclick="timerTogglePlay()">▶ Start</button>
+      <button class="t-btn adj" onclick="timerReset()" title="Reset" style="padding:5px 9px;">↺</button>
+      <button class="timer-collapse-btn" onclick="timerToggleExpand()" id="timer-collapse-btn">▸ expand</button>
     </div>
     <div class="timer-expanded-body">
       <div class="timer-ring-wrap">
@@ -814,8 +814,8 @@ color: var(--text);
         <div class="timer-controls">
           <button class="t-btn adj" onclick="timerAdjust(-30)">&#8722;30s</button>
           <button class="t-btn adj" onclick="timerAdjust(-60)">&#8722;1m</button>
-          <button class="t-btn start" id="t-start" onclick="timerTogglePlay()">&#9654; Start</button>
-          <button class="t-btn stop"  id="t-stop"  onclick="timerReset()" style="display:none">&#9632; Reset</button>
+          <button class="t-btn start" id="t-start" onclick="timerTogglePlay()">▶ Start</button>
+          <button class="t-btn stop"  id="t-stop"  onclick="timerReset()" style="display:none">■ Reset</button>
           <button class="t-btn adj" onclick="timerAdjust(60)">+1m</button>
           <button class="t-btn adj" onclick="timerAdjust(30)">+30s</button>
         </div>
@@ -1372,20 +1372,20 @@ function timerUpdateUI() {
   const stopBtn  = document.getElementById('t-stop');
 
   if (timerRemain <= 0) {
-    startBtn.textContent = '&#9654; Start'; startBtn.className = 't-btn start';
-    miniPlay.textContent = '&#9654; Start'; miniPlay.className = 'timer-mini-play';
+    startBtn.textContent = '▶ Start'; startBtn.className = 't-btn start';
+    miniPlay.textContent = '▶ Start'; miniPlay.className = 'timer-mini-play';
     stopBtn.style.display = '';
   } else if (timerRunning) {
-    startBtn.textContent = '&#9646;&#9646; Pause'; startBtn.className = 't-btn pause';
-    miniPlay.textContent = '&#9646;&#9646; Pause'; miniPlay.className = 'timer-mini-play pause-btn';
+    startBtn.textContent = '⏸ Pause'; startBtn.className = 't-btn pause';
+    miniPlay.textContent = '⏸ Pause'; miniPlay.className = 'timer-mini-play pause-btn';
     stopBtn.style.display = '';
   } else if (timerRemain < timerTotal) {
-    startBtn.textContent = '&#9654; Resume'; startBtn.className = 't-btn start';
-    miniPlay.textContent = '&#9654; Resume'; miniPlay.className = 'timer-mini-play';
+    startBtn.textContent = '▶ Resume'; startBtn.className = 't-btn start';
+    miniPlay.textContent = '▶ Resume'; miniPlay.className = 'timer-mini-play';
     stopBtn.style.display = '';
   } else {
-    startBtn.textContent = '&#9654; Start'; startBtn.className = 't-btn start';
-    miniPlay.textContent = '&#9654; Start'; miniPlay.className = 'timer-mini-play';
+    startBtn.textContent = '▶ Start'; startBtn.className = 't-btn start';
+    miniPlay.textContent = '▶ Start'; miniPlay.className = 'timer-mini-play';
     stopBtn.style.display = 'none';
   }
 }
@@ -1459,7 +1459,7 @@ function timerToggleExpand() {
   timerCollapsed = !timerCollapsed;
   const btn = document.getElementById('timer-collapse-btn');
   timerUpdateUI();
-  btn.textContent = timerCollapsed ? '&#9656; expand' : '&#9662; collapse';
+  btn.textContent = timerCollapsed ? '▸ expand' : '▾ collapse';
 }
 
 // -- COMMENTS ------------------------------------------
@@ -1467,8 +1467,8 @@ function buildCommentSection(task, isExpanded) {
   var comments = task.comments || [];
   var tid = task.id;
   var toggleLabel = isExpanded
-    ? '&#9662; Hide comments'
-    : (comments.length ? '&#9656; ' + comments.length + ' comment' + (comments.length !== 1 ? 's' : '') : '&#9656; Add comment');
+    ? '▾ Hide comments'
+    : (comments.length ? '▸ ' + comments.length + ' comment' + (comments.length !== 1 ? 's' : '') : '▸ Add comment');
 
   var out = '<div style="margin-bottom:4px;">'
     + '<button class="comment-toggle-btn" onclick="toggleComments(&#39;' + tid + '&#39;)">'
