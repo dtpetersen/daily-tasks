@@ -1,30 +1,34 @@
-const CACHE_NAME = ‘daily-tasks-v1’;
-const ASSETS = [
-‘./index.html’,
-‘./manifest.json’
+var CACHE_NAME = 'daily-tasks-v1';
+var ASSETS = [
+  './index.html',
+  './manifest.json'
 ];
 
-// Install: cache core files
-self.addEventListener(‘install’, event => {
-event.waitUntil(
-caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
-);
-self.skipWaiting();
+self.addEventListener('install', function(event) {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(function(cache) {
+      return cache.addAll(ASSETS);
+    })
+  );
+  self.skipWaiting();
 });
 
-// Activate: clean up old caches
-self.addEventListener(‘activate’, event => {
-event.waitUntil(
-caches.keys().then(keys =>
-Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
-)
-);
-self.clients.claim();
+self.addEventListener('activate', function(event) {
+  event.waitUntil(
+    caches.keys().then(function(keys) {
+      return Promise.all(
+        keys.filter(function(k) { return k !== CACHE_NAME; })
+            .map(function(k) { return caches.delete(k); })
+      );
+    })
+  );
+  self.clients.claim();
 });
 
-// Fetch: serve from cache, fall back to network
-self.addEventListener(‘fetch’, event => {
-event.respondWith(
-caches.match(event.request).then(cached => cached || fetch(event.request))
-);
+self.addEventListener('fetch', function(event) {
+  event.respondWith(
+    caches.match(event.request).then(function(cached) {
+      return cached || fetch(event.request);
+    })
+  );
 });
