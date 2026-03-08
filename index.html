@@ -1195,7 +1195,7 @@ function addTask() {
   if (!text) { input.focus(); return; }
   const priority = document.getElementById('new-priority').value;
   const due = document.getElementById('new-due').value;
-  const list = state.activeList === 'all' ? (state.lists[1]?.id || 'work') : state.activeList;
+  const list = state.activeList === 'all' ? ((state.lists[1] ? state.lists[1].id : 'work')) : state.activeList;
 
   state.tasks.unshift({ id: genId(), text, done: false, highlighted: false, priority, due: due||null, list, color: null, comments: [] });
   save(); render();
@@ -1596,7 +1596,7 @@ let exportOpt = 'all', checkImportData = null, checkMergeOpt = 'merge';
 
 function openExportModal() {
   exportOpt = 'all';
-  ['all','list','incomplete'].forEach(v => document.getElementById('eopt-'+v)?.classList.toggle('selected', v==='all'));
+  ['all','list','incomplete'].forEach(v => (document.getElementById('eopt-'+v) || {classList:{toggle:function(){}}}).classList.toggle('selected', v==='all'));
   const sel = document.getElementById('export-list-select');
   sel.innerHTML = state.lists.filter(l=>l.id!=='all').map(l=>'<option value="'+l.id+'">'+l.name+'</option>').join('');
   document.getElementById('export-list-wrap').style.display = 'none';
@@ -1608,7 +1608,7 @@ function closeExportModal() { hideIOModal('export-modal'); }
 
 function selectExportOpt(val) {
   exportOpt = val;
-  ['all','list','incomplete'].forEach(v => document.getElementById('eopt-'+v)?.classList.toggle('selected', v===val));
+  ['all','list','incomplete'].forEach(v => (document.getElementById('eopt-'+v) || {classList:{toggle:function(){}}}).classList.toggle('selected', v===val));
   document.getElementById('export-list-wrap').style.display = val==='list' ? '' : 'none';
   updateExportSummary();
 }
@@ -1664,7 +1664,7 @@ function closeImportModal() { hideIOModal('import-modal'); checkImportData = nul
 
 function selectCheckMergeOpt(val) {
   checkMergeOpt = val;
-  ['merge','replace','overwrite'].forEach(v => document.getElementById('cmopt-'+v)?.classList.toggle('selected', v===val));
+  ['merge','replace','overwrite'].forEach(v => (document.getElementById('cmopt-'+v) || {classList:{toggle:function(){}}}).classList.toggle('selected', v===val));
 }
 
 function handleCheckDrop(e) {
