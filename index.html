@@ -4,12 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="color-scheme" content="dark">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Daily Tasks">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#0f0e0c">
-<link rel="manifest" href="manifest.json">
 <title>Daily Checklist</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Playfair+Display:wght@700&display=swap');
@@ -96,11 +90,7 @@ transition: background 0.3s, color 0.3s;
 background-image:
   radial-gradient(ellipse at 15% 10%, var(--bg-grad1) 0%, transparent 50%),
   radial-gradient(ellipse at 85% 85%, var(--bg-grad2) 0%, transparent 50%);
-/* Safe area insets for iPhone notch / home indicator */
-padding-top: max(32px, env(safe-area-inset-top));
-padding-bottom: max(80px, env(safe-area-inset-bottom));
-padding-left: max(20px, env(safe-area-inset-left));
-padding-right: max(20px, env(safe-area-inset-right));
+
 }
 
 input, select, textarea, button {
@@ -187,6 +177,41 @@ color: inherit; font-family: inherit; font-size: inherit;
 font-weight: inherit; letter-spacing: inherit; text-transform: inherit;
 outline: none; width: 80px; padding: 0;
 }
+
+/* -- FILTER BAR -- */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.filter-label {
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-right: 4px;
+}
+.filter-btn {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  padding: 5px 12px;
+  border-radius: 3px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.18s;
+}
+.filter-btn:hover { border-color: var(--border2); color: var(--text); }
+.filter-btn.active { background: var(--accent); border-color: var(--accent); color: var(--btn-text); font-weight: 500; }
+.filter-btn.active-priority-high { background: var(--red); border-color: var(--red); color: #fff; }
+.filter-btn.active-priority-med  { background: var(--orange); border-color: var(--orange); color: #fff; }
+.filter-btn.active-priority-low  { background: var(--green); border-color: var(--green); color: var(--btn-text); }
+.filter-divider { width: 1px; height: 20px; background: var(--border2); margin: 0 4px; }
 
 /* -- STATS -- */
 .stats-row {
@@ -745,24 +770,6 @@ border-radius: 4px; cursor: pointer; transition: all 0.18s;
 .merge-desc  { font-size: 0.62rem; color: var(--text-muted); margin-top: 2px; line-height: 1.4; }
 .header-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 
-/* -- PWA INSTALL BANNER -- */
-.install-banner {
-display: none;
-align-items: center;
-gap: 12px;
-background: var(--highlight-bg);
-border: 1px solid var(--accent);
-border-radius: 5px;
-padding: 12px 16px;
-margin-bottom: 20px;
-font-size: 0.72rem;
-color: var(--text);
-}
-.install-banner.visible { display: flex; }
-.install-banner-text { flex: 1; line-height: 1.5; }
-.install-banner-text strong { color: var(--accent); }
-.install-dismiss { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1rem; padding: 2px 6px; border-radius: 3px; transition: color 0.15s; }
-.install-dismiss:hover { color: var(--text); }
 </style>
 </head>
 <body>
@@ -784,14 +791,6 @@ color: var(--text);
       <button class="io-btn" onclick="openImportModal()">&#8595; Import</button>
     </div>
   </header>
-
-  <!-- PWA INSTALL BANNER -->
-  <div class="install-banner" id="install-banner">
-    <div class="install-banner-text">
-      <strong>Install as App</strong> &mdash; Add to your home screen for the full app experience, offline support, and no browser bar.
-    </div>
-    <button class="btn" id="install-btn" style="font-size:0.7rem;padding:8px 14px;">Install</button>
-    <button class="install-dismiss" id="install-dismiss" title="Dismiss">&#x2715;</button>
   </div>
 
   <!-- LIST TABS -->
@@ -850,6 +849,19 @@ color: var(--text);
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- FILTER BAR -->
+  <div class="filter-bar" id="filter-bar">
+    <span class="filter-label">Filter:</span>
+    <button class="filter-btn" id="filter-today" onclick="toggleFilter('today')">Due Today</button>
+    <button class="filter-btn" id="filter-overdue" onclick="toggleFilter('overdue')">Overdue</button>
+    <div class="filter-divider"></div>
+    <button class="filter-btn" id="filter-high" onclick="toggleFilter('high')">&#128308; High</button>
+    <button class="filter-btn" id="filter-med" onclick="toggleFilter('med')">&#127841; Medium</button>
+    <button class="filter-btn" id="filter-low" onclick="toggleFilter('low')">&#127802; Low</button>
+    <div class="filter-divider"></div>
+    <button class="filter-btn" id="filter-clear" onclick="clearFilters()" style="display:none;">&#x2715; Clear</button>
   </div>
 
   <!-- ADD PANEL -->
@@ -1068,6 +1080,56 @@ function formatDue(dateStr) {
   return { label: 'Due ' + dateStr, cls: '' };
 }
 
+// -- FILTERS ------------------------------------------
+var activeFilters = {};
+
+function toggleFilter(key) {
+  if (activeFilters[key]) {
+    delete activeFilters[key];
+  } else {
+    activeFilters[key] = true;
+  }
+  updateFilterUI();
+  render();
+}
+
+function clearFilters() {
+  activeFilters = {};
+  updateFilterUI();
+  render();
+}
+
+function updateFilterUI() {
+  var keys = ['today', 'overdue', 'high', 'med', 'low'];
+  var anyActive = false;
+  keys.forEach(function(key) {
+    var btn = document.getElementById('filter-' + key);
+    if (!btn) return;
+    btn.className = 'filter-btn';
+    if (activeFilters[key]) {
+      anyActive = true;
+      if (key === 'high') btn.className = 'filter-btn active-priority-high';
+      else if (key === 'med') btn.className = 'filter-btn active-priority-med';
+      else if (key === 'low') btn.className = 'filter-btn active-priority-low';
+      else btn.className = 'filter-btn active';
+    }
+  });
+  var clearBtn = document.getElementById('filter-clear');
+  if (clearBtn) clearBtn.style.display = anyActive ? '' : 'none';
+}
+
+function applyFilters(tasks) {
+  var today = todayStr();
+  return tasks.filter(function(t) {
+    if (activeFilters.today && t.due !== today) return false;
+    if (activeFilters.overdue && !(t.due && t.due < today)) return false;
+    if (activeFilters.high && t.priority !== 'high') return false;
+    if (activeFilters.med && t.priority !== 'med') return false;
+    if (activeFilters.low && t.priority !== 'low') return false;
+    return true;
+  });
+}
+
 // -- VISIBLE TASKS --------------------------------------
 function visibleTasks() {
   if (state.activeList === 'all') return state.tasks;
@@ -1144,7 +1206,8 @@ function renderListsBar() {
 function render() {
   renderListsBar();
 
-  const tasks = visibleTasks();
+  var allVisible = visibleTasks();
+  var tasks = applyFilters(allVisible);
   const active = tasks.filter(t => !t.done);
   const done   = tasks.filter(t => t.done);
 
@@ -1675,7 +1738,6 @@ document.addEventListener('click', () => {
 function setTheme(t) {
   document.documentElement.setAttribute('data-theme', t);
   document.querySelector('meta[name="color-scheme"]').setAttribute('content', t === 'light' ? 'light' : 'dark');
-  document.querySelector('meta[name="theme-color"]').setAttribute('content', t === 'light' ? '#f0ede6' : '#0f0e0c');
   localStorage.setItem('checklist-theme', t);
   document.getElementById('btn-light').classList.toggle('active', t === 'light');
   document.getElementById('btn-dark').classList.toggle('active',  t === 'dark');
@@ -1896,36 +1958,8 @@ function confirmDeleteList() {
   showToast(chk.checked ? 'List deleted, tasks moved' : 'List and tasks deleted');
 }
 
-// -- PWA INSTALL PROMPT --------------------------------
-let deferredInstallPrompt = null;
 
-window.addEventListener('beforeinstallprompt', e => {
-  e.preventDefault();
-  deferredInstallPrompt = e;
-  // Only show if not already installed and not dismissed
-  if (!localStorage.getItem('pwa-install-dismissed')) {
-    document.getElementById('install-banner').classList.add('visible');
-  }
-});
 
-document.getElementById('install-btn').addEventListener('click', async () => {
-  if (!deferredInstallPrompt) return;
-  deferredInstallPrompt.prompt();
-  const { outcome } = await deferredInstallPrompt.userChoice;
-  deferredInstallPrompt = null;
-  document.getElementById('install-banner').classList.remove('visible');
-  if (outcome === 'accepted') showToast('App installed successfully!');
-});
-
-document.getElementById('install-dismiss').addEventListener('click', () => {
-  document.getElementById('install-banner').classList.remove('visible');
-  localStorage.setItem('pwa-install-dismissed', '1');
-});
-
-window.addEventListener('appinstalled', () => {
-  document.getElementById('install-banner').classList.remove('visible');
-  deferredInstallPrompt = null;
-});
 
 // -- INIT ----------------------------------------------
 document.getElementById('new-task').addEventListener('keydown', e => { if (e.key === 'Enter') addTask(); });
@@ -1957,12 +1991,6 @@ render();
 timerUpdateUI();
 setTimeout(checkDueReminders, 1500);
 
-// -- SERVICE WORKER REGISTRATION -----------------------
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js')
-    .then(() => console.log('Service worker registered'))
-    .catch(err => console.warn('SW registration failed:', err));
-}
 </script>
 </body>
 </html>
