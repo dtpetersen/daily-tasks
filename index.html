@@ -1259,7 +1259,21 @@ function render() {
   [...active, ...done].forEach((task, idx) => {
     if (idx === active.length && done.length > 0) {
       const div = document.createElement('div');
-      div.innerHTML = '<hr class="done-divider"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;"><div class="section-label">Completed</div><button onclick="clearCompleted()" class="clear-completed-btn">Clear All</button></div>';
+      const hr = document.createElement('hr');
+      hr.className = 'done-divider';
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;';
+      const lbl = document.createElement('div');
+      lbl.className = 'section-label';
+      lbl.textContent = 'Completed';
+      const clearBtn = document.createElement('button');
+      clearBtn.className = 'clear-completed-btn';
+      clearBtn.textContent = 'Clear All';
+      clearBtn.onclick = clearCompleted;
+      row.appendChild(lbl);
+      row.appendChild(clearBtn);
+      div.appendChild(hr);
+      div.appendChild(row);
       list.appendChild(div);
     }
 
