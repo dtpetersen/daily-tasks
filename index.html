@@ -542,6 +542,22 @@ font-weight: 500;
   .task-actions { opacity: 1; }
 }
 
+/* -- CLEAR COMPLETED BTN -- */
+.clear-completed-btn {
+background: none;
+border: 1px solid var(--border);
+color: var(--text-muted);
+font-family: 'DM Mono', monospace;
+font-size: 0.63rem;
+letter-spacing: 0.07em;
+text-transform: uppercase;
+padding: 3px 10px;
+border-radius: 3px;
+cursor: pointer;
+transition: all 0.18s;
+}
+.clear-completed-btn:hover { border-color: var(--red); color: var(--red); }
+
 /* -- DIVIDER -- */
 .done-divider { border: none; border-top: 1px dashed var(--border); margin: 16px 0 10px; }
 
@@ -1243,7 +1259,7 @@ function render() {
   [...active, ...done].forEach((task, idx) => {
     if (idx === active.length && done.length > 0) {
       const div = document.createElement('div');
-      div.innerHTML = '<hr class="done-divider"><div class="section-label" style="margin-bottom:8px;">Completed</div>';
+      div.innerHTML = '<hr class="done-divider"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;"><div class="section-label">Completed</div><button onclick="clearCompleted()" class="clear-completed-btn">Clear All</button></div>';
       list.appendChild(div);
     }
 
@@ -1432,6 +1448,15 @@ function _removeTask(idx) {
   deletedTask = { task: state.tasks[idx], idx };
   state.tasks.splice(idx, 1);
   save(); render(); showToast('Task deleted');
+}
+
+// -- CLEAR COMPLETED ----------------------------------
+function clearCompleted() {
+  var completed = state.tasks.filter(function(t) { return t.done; });
+  if (completed.length === 0) return;
+  state.tasks = state.tasks.filter(function(t) { return !t.done; });
+  save(); render();
+  showToast(completed.length + ' completed task' + (completed.length !== 1 ? 's' : '') + ' cleared');
 }
 
 // -- UNDO ----------------------------------------------
