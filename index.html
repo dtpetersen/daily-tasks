@@ -90,7 +90,12 @@ transition: background 0.3s, color 0.3s;
 background-image:
   radial-gradient(ellipse at 15% 10%, var(--bg-grad1) 0%, transparent 50%),
   radial-gradient(ellipse at 85% 85%, var(--bg-grad2) 0%, transparent 50%);
-
+display: flex;
+justify-content: center;
+}
+.app-wrapper {
+width: 100%;
+max-width: 780px;
 }
 
 input, select, textarea, button {
@@ -103,7 +108,7 @@ forced-color-adjust: none;
 transition: background-color 0.3s, color 0.3s, border-color 0.3s;
 }
 
-.app { max-width: 780px; margin: 0 auto; display: flex; flex-direction: column; gap: 0; }
+.app { max-width: 780px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 0; }
 
 /* -- HEADER -- */
 header {
@@ -773,7 +778,7 @@ border-radius: 4px; cursor: pointer; transition: all 0.18s;
 </style>
 </head>
 <body>
-<div class="app">
+<div class="app-wrapper"><div class="app">
 
   <!-- HEADER -->
   <header>
